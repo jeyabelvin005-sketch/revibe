@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReVibe - Buy & Sell Used Items</title>
+<link rel="icon" href="logo.png" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #f2f4f5; --surface: #ffffff; --text: #002f34; --text-soft: #7f9799; --pink: #F0458F; --border: #e0e0e0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
+  body { background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+  
+  header { background: var(--surface); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .header-inner { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 16px; }
+  .logo { font-size: 1.5rem; font-weight: 700; color: var(--pink); text-decoration: none; }
+  
+  .search-bar { flex: 1; display: flex; background: var(--surface); border: 2px solid var(--text); border-radius: 4px; overflow: hidden; }
+  .search-bar input { flex: 1; border: none; padding: 10px 12px; outline: none; }
+  .search-btn { background: var(--text); border: none; padding: 0 16px; cursor: pointer; color: white; font-weight: 500; }
+
+  .header-actions { display: flex; gap: 12px; align-items: center; }
+  .cart-btn { background: none; border: none; cursor: pointer; position: relative; display: flex; align-items: center; gap: 5px; font-weight: 500; color: var(--text); }
+  .cart-count { background: var(--pink); color: white; padding: 2px 6px; border-radius: 50%; font-size: 0.7rem; position: absolute; top: -8px; right: -8px; }
+
+  .top-banner { background: #ffebf2; text-align: center; padding: 10px; font-size: 0.85rem; color: var(--pink); font-weight: 500; }
+  
+  .categories { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 0; margin-bottom: 16px; overflow-x: auto; white-space: nowrap; }
+  .cat-container { max-width: 1200px; margin: 0 auto; padding: 0 16px; display: flex; gap: 12px; }
+  .cat-btn { background: transparent; border: 1px solid var(--border); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; color: var(--text); }
+  .cat-btn.active { background: #d8f2ee; border-color: #d8f2ee; font-weight: 500; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 16px 40px; }
+  
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media(min-width: 600px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+  @media(min-width: 900px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+  
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
+  .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f8f9fa; }
+  .card-body { padding: 10px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .card-price { font-size: 1.1rem; font-weight: 700; }
+  .card-title { 
+  font-size: 0.85rem; 
+  color: var(--text-soft); 
+  line-height: 1.3; 
+  display: -webkit-box; 
+  -webkit-line-clamp: 2; 
+  line-clamp: 2; /* Standard property */
+  -webkit-box-orient: vertical; 
+  box-orient: vertical; /* Standard property */
+  overflow: hidden; 
+}
+  .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.7rem; color: var(--text-soft); }
+  .btn-add { background: var(--pink); color: white; border: none; padding: 8px; border-radius: 4px; font-weight: 500; font-size: 0.8rem; cursor: pointer; width: 100%; margin-top: 8px; }
+
+  /* Modals */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px; }
+  .modal { background: var(--surface); width: 100%; max-width: 400px; border-radius: 8px; padding: 24px; position: relative; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 1.2rem; margin-bottom: 16px; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 0.8rem; margin-bottom: 4px; color: var(--text-soft); }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; }
+  .close-modal { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+  .btn-submit { background: var(--pink); color: white; border: none; padding: 12px; border-radius: 4px; font-weight: 700; width: 100%; margin-top: 8px; cursor: pointer; }
+
+  .cart-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 10px; font-size: 0.9rem; }
+  .payment-options { display: flex; gap: 12px; margin: 12px 0; }
+  .payment-options label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; }
+
+  .request-banner { background: var(--surface); border: 1px dashed var(--pink); padding: 16px; border-radius: 8px; text-align: center; margin-bottom: 24px; }
+  .request-banner p { font-size: 0.9rem; color: var(--text-soft); margin-bottom: 10px; }
+  .btn-wanted { background: transparent; border: 1px solid var(--pink); color: var(--pink); padding: 8px 16px; border-radius: 4px; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">ReVibe</a>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search used products...">
+      <button class="search-btn">Search</button>
+    </div>
+    <div class="header-actions">
+      <button class="cart-btn" onclick="openCart()">
+        🛒 Cart <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="top-banner">Buy quality used products or Request what you need!</div>
+
+<div class="categories">
+  <div class="cat-container" id="categoryList">
+    <button class="cat-btn active" data-cat="all">All Categories</button>
+    <button class="cat-btn" data-cat="phone">Mobiles</button>
+    <button class="cat-btn" data-cat="electronics">Electronics</button>
+    <button class="cat-btn" data-cat="fashion">Fashion</button>
+    <button class="cat-btn" data-cat="home">Furniture</button>
+    <button class="cat-btn" data-cat="books">Books</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="request-banner">
+    <p>Can't find what you are looking for?</p>
+    <button class="btn-wanted" onclick="openWantedModal()">Request a Product</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- Wanted Request Modal -->
+<div class="modal-overlay" id="wantedModal">
+  <div class="modal">
+    <button class="close-modal" onclick="closeModal('wantedModal')">×</button>
+    <h2>Request a Product</h2>
+    <p style="font-size:0.85rem; color:var(--text-soft); margin-bottom:16px;">Tell us what you are looking for, and we will try to find it for you!</p>
+    <form id="wantedForm">
+      <div class="form-group"><label>Your Name</label><input type="text" id="reqName" required></div>
+      <div class="form-group"><label>Phone Number</label><input type="tel" id="reqPhone" required></div>
+      <div class="form-group"><label>What product do you need?</label><textarea id="reqProduct" rows="2" required placeholder="E.g., iPhone 11 in good condition"></textarea></div>
+      <button type="submit" class="btn-submit">Send Request</button>
+    </form>
+  </div>
+</div>
+
+<!-- Cart & Checkout Modal -->
+<div class="modal-overlay" id="cartModal">
+  <div class="modal">
+    <button class="close-modal" onclick="closeModal('cartModal')">×</button>
+    <h2>Checkout</h2>
+    
+    <div id="cartItemsList"></div>
+    <div style="font-weight:700; margin: 16px 0; font-size:1.1rem;">Total: ₹<span id="cartTotal">0</span></div>
+    
+    <form id="checkoutForm">
+      <div class="form-group"><label>Full Name</label><input type="text" id="buyerName" required></div>
+      <div class="form-group"><label>Phone</label><input type="tel" id="buyerPhone" required></div>
+      <div class="form-group"><label>Delivery Address</label><textarea id="buyerAddress" rows="2" required></textarea></div>
+      
+      <div class="payment-options">
+        <label><input type="radio" name="payMethod" value="online" checked> Pay Online</label>
+        <label><input type="radio" name="payMethod" value="cod"> Cash on Delivery</label>
+      </div>
+      
+      <button type="submit" class="btn-submit">Place Order</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+const API_BASE = "";
+const RAZORPAY_KEY_ID = "rzp_test_Tp3YUUJiyuRhTM"; // ⚠️ Unga Razorpay Key ID inga podunga
+let PRODUCTS = [];
+let currentCategory = 'all';
+let cart = {}; // { id: qty }
+
+async function loadProducts() {
+  try {
+    const res = await fetch(API_BASE + '/api/products');
+    PRODUCTS = await res.json();
+    renderGrid();
+  } catch (e) {
+    document.getElementById('grid').innerHTML = '<p>Error loading products.</p>';
+  }
+}
+
+function renderGrid() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const grid = document.getElementById('grid');
+  
+  const filtered = PRODUCTS.filter(p => {
+    const matchCat = currentCategory === 'all' || p.category === currentCategory;
+    const matchSearch = p.name.toLowerCase().includes(search);
+    return matchCat && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:40px; color:#7f9799;">No products found.</p>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p => `
+    <div class="card">
+      ${p.imageUrl ? `<img src="${API_BASE}${p.imageUrl}" class="card-img">` : `<div class="card-img"></div>`}
+      <div class="card-body">
+        <div class="card-price">₹${p.price.toLocaleString('en-IN')}</div>
+        <div class="card-title">${p.name}</div>
+        <div class="card-footer"><span>${new Date(p.date).toLocaleDateString()}</span></div>
+        <button class="btn-add" onclick="addToCart(${p.id})">Add to Cart</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addToCart(id) {
+  cart[id] = (cart[id] || 0) + 1;
+  updateCartCount();
+  alert('Product added to cart!');
+}
+
+function updateCartCount() {
+  const count = Object.values(cart).reduce((a, b) => a + b, 0);
+  document.getElementById('cartCount').innerText = count;
+}
+
+function openCart() {
+  if(Object.keys(cart).length === 0) return alert('Your cart is empty!');
+  
+  const list = document.getElementById('cartItemsList');
+  let total = 0;
+  list.innerHTML = Object.entries(cart).map(([id, qty]) => {
+    const p = PRODUCTS.find(prod => prod.id == id);
+    total += p.price * qty;
+    return `<div class="cart-item"><span>${p.name} (x${qty})</span><b>₹${p.price * qty}</b></div>`;
+  }).join('');
+  
+  document.getElementById('cartTotal').innerText = total.toLocaleString('en-IN');
+  document.getElementById('cartModal').style.display = 'flex';
+}
+
+function openWantedModal() { document.getElementById('wantedModal').style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// Handle Wanted Request
+document.getElementById('wantedForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = { buyerName: document.getElementById('reqName').value, buyerPhone: document.getElementById('reqPhone').value, wantedProduct: document.getElementById('reqProduct').value };
+  await fetch(API_BASE + '/api/wanted-request', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+  alert('Request sent successfully! We will contact you if we find it.');
+  closeModal('wantedModal');
+  e.target.reset();
+});
+
+// Handle Checkout
+document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button');
+  btn.innerText = 'Processing...'; btn.disabled = true;
+  
+  const payMethod = document.querySelector('input[name="payMethod"]:checked').value;
+  const items = Object.keys(cart).map(id => ({ id: Number(id), qty: cart[id] }));
+  const customer = { name: document.getElementById('buyerName').value, phone: document.getElementById('buyerPhone').value, address: document.getElementById('buyerAddress').value };
+  
+  try {
+    const res = await fetch(API_BASE + '/api/checkout', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ items, customer, paymentMethod: payMethod })
+    });
+    const order = await res.json();
+    
+    if(payMethod === 'cod') {
+      alert('Order placed successfully! Pay cash upon delivery.');
+      finishOrder();
+    } else {
+      const rzp = new Razorpay({
+        key: RAZORPAY_KEY_ID, amount: order.amount, currency: order.currency, order_id: order.orderId, name: 'ReVibe',
+        prefill: { name: customer.name, contact: customer.phone },
+        handler: async function(response) {
+          await fetch(API_BASE + '/api/verify-payment', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(response) });
+          alert('Payment successful! Order placed.');
+          finishOrder();
+        }
+      });
+      rzp.open();
+      btn.innerText = 'Place Order'; btn.disabled = false;
+    }
+  } catch (err) {
+    alert('Error processing order.'); btn.innerText = 'Place Order'; btn.disabled = false;
+  }
+});
+
+function finishOrder() {
+  cart = {}; updateCartCount();
+  closeModal('cartModal');
+  document.getElementById('checkoutForm').reset();
+  document.querySelector('#checkoutForm button').innerText = 'Place Order';
+  document.querySelector('#checkoutForm button').disabled = false;
+}
+
+document.getElementById('categoryList').addEventListener('click', e => {
+  if(e.target.classList.contains('cat-btn')) {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active'); currentCategory = e.target.dataset.cat; renderGrid();
+  }
+});
+document.getElementById('searchInput').addEventListener('input', renderGrid);
+
+loadProducts();
+</script>
+</body>
+</html>

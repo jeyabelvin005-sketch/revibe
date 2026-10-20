@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReVibe - Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --pink:#F0458F; --bg:#f2f4f5; --surface:#fff; --text:#002f34; --border:#e0e0e0; }
+  * { box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--text); }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+  
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  h1 { font-size: 1.5rem; margin: 0; color: var(--pink); }
+  h2 { font-size: 1.2rem; margin: 0 0 16px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+  
+  .key-bar { display: flex; gap: 8px; margin-bottom: 24px; }
+  .key-bar input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 4px; }
+  
+  .card { background: var(--surface); padding: 20px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin-bottom: 24px; }
+  
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media(max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+  .full { grid-column: 1 / -1; }
+  
+  label { display: block; font-size: 0.85rem; margin-bottom: 4px; color: #555; }
+  input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.95rem; }
+  
+  .btn { background: var(--pink); color: #fff; border: none; padding: 12px; border-radius: 4px; font-weight: 700; cursor: pointer; width: 100%; }
+  
+  .item { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; }
+  .item img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+  .item-info { flex: 1; }
+  .item-info b { display: block; font-size: 0.95rem; }
+  .item-info span { font-size: 0.85rem; color: #777; }
+  .btn-del { background: #ff4d4f; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+  
+  .req-card { border-left: 4px solid var(--pink); background: var(--surface); padding: 16px; margin-bottom: 12px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .req-top { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; }
+  .req-meta { font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+  .status { padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+  .status.paid { background: #d8f2ee; color: #00695c; }
+  .status.cod { background: #ffebf2; color: #d81b60; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>ReVibe Admin</h1>
+    <a href="/" target="_blank" style="font-size:0.9rem; color:#555; text-decoration:none;">View Website ↗</a>
+  </div>
+
+  <div class="key-bar">
+    <input type="password" id="adminKey" placeholder="Enter Admin Key">
+    <button class="btn" style="width:auto; padding:0 20px;" onclick="saveKey()">Save Key</button>
+  </div>
+
+  <div class="card">
+    <h2>Post a Product</h2>
+    <form id="productForm" class="form-grid">
+      <div class="full"><label>Product Name</label><input name="name" required></div>
+      <div><label>Category</label>
+        <select name="category">
+          <option value="phone">Mobiles</option>
+          <option value="electronics">Electronics</option>
+          <option value="fashion">Fashion</option>
+          <option value="home">Furniture</option>
+          <option value="books">Books</option>
+          <option value="others">Others</option>
+        </select>
+      </div>
+      <div><label>Price (₹)</label><input name="price" type="number" required></div>
+      <div class="full"><label>Description</label><textarea name="description" rows="2"></textarea></div>
+      <div class="full"><label>Upload Image</label><input name="image" type="file" accept="image/*" required></div>
+      <div class="full"><button type="submit" class="btn">Post Product</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>My Products</h2>
+    <div id="productList">Loading...</div>
+  </div>
+
+  <div class="card">
+    <h2>Product Orders (Online / COD)</h2>
+    <div id="orderList">Loading...</div>
+  </div>
+
+  <div class="card">
+    <h2>Buyer Wanted Requests</h2>
+    <div id="requestList">Loading...</div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "";
+
+function getKey() { return localStorage.getItem('revibe_admin_key') || ''; }
+function saveKey() {
+  const v = document.getElementById('adminKey').value.trim();
+  if(v) localStorage.setItem('revibe_admin_key', v);
+  loadData();
+}
+document.getElementById('adminKey').value = getKey();
+
+async function loadData() {
+  loadProducts(); loadOrders(); loadRequests();
+}
+
+async function loadProducts() {
+  const res = await fetch(API_BASE + '/api/products');
+  const products = await res.json();
+  const list = document.getElementById('productList');
+  if(products.length === 0) return list.innerHTML = '<p style="color:#777;">No products posted yet.</p>';
+  
+  list.innerHTML = products.reverse().map(p => `
+    <div class="item">
+      ${p.imageUrl ? `<img src="${API_BASE}${p.imageUrl}">` : ''}
+      <div class="item-info">
+        <b>${p.name}</b><span>₹${p.price} · ${p.category}</span>
+      </div>
+      <button class="btn-del" onclick="deleteProduct(${p.id})">Delete</button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('productForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button');
+  btn.innerText = 'Posting...';
+  const form = new FormData(e.target);
+  const res = await fetch(API_BASE + '/api/admin/products', { method: 'POST', headers: { 'x-admin-key': getKey() }, body: form });
+  if(res.ok) { e.target.reset(); loadProducts(); btn.innerText = 'Post Product'; }
+  else { alert('Error. Check Admin Key.'); btn.innerText = 'Post Product'; }
+});
+
+async function deleteProduct(id) {
+  if(!confirm('Delete this product?')) return;
+  await fetch(API_BASE + '/api/admin/products/' + id, { method: 'DELETE', headers: { 'x-admin-key': getKey() } });
+  loadProducts();
+}
+
+async function loadOrders() {
+  const res = await fetch(API_BASE + '/api/admin/orders', { headers: { 'x-admin-key': getKey() } });
+  if(!res.ok) return document.getElementById('orderList').innerHTML = '<p style="color:#777;">Enter Admin Key to view orders.</p>';
+  
+  const orders = await res.json();
+  const list = document.getElementById('orderList');
+  if(orders.length === 0) return list.innerHTML = '<p style="color:#777;">No orders yet.</p>';
+  
+  list.innerHTML = orders.map(o => `
+    <div class="req-card" style="border-left-color: ${o.status === 'Paid' ? '#00695c' : '#d81b60'};">
+      <div class="req-top">
+        <span>${o.customer.name} <span class="status ${o.status === 'Paid' ? 'paid' : 'cod'}">${o.status}</span></span>
+        <span>₹${o.amount}</span>
+      </div>
+      <div class="req-meta"><b>Phone:</b> ${o.customer.phone}</div>
+      <div class="req-meta"><b>Address:</b> ${o.customer.address}</div>
+      <div class="req-meta" style="margin-top:8px; font-style:italic;">
+        ${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadRequests() {
+  const res = await fetch(API_BASE + '/api/admin/requests', { headers: { 'x-admin-key': getKey() } });
+  if(!res.ok) return document.getElementById('requestList').innerHTML = '<p style="color:#777;">Enter Admin Key to view requests.</p>';
+  
+  const reqs = await res.json();
+  const list = document.getElementById('requestList');
+  if(reqs.length === 0) return list.innerHTML = '<p style="color:#777;">No wanted requests yet.</p>';
+  
+  list.innerHTML = reqs.map(r => `
+    <div class="req-card">
+      <div class="req-top">
+        <span>${r.buyerName}</span>
+        <span style="color:var(--pink);">${new Date(r.date).toLocaleDateString()}</span>
+      </div>
+      <div class="req-meta"><b>Looking for:</b> ${r.wantedProduct}</div>
+      <div class="req-meta"><b>Phone:</b> ${r.buyerPhone}</div>
+    </div>
+  `).join('');
+}
+
+loadData();
+</script>
+</body>
+</html>

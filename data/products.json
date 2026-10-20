@@ -1,0 +1,8 @@
+[
+  {"id":1,"name":"iPhone 12 (128GB) - Good Condition","category":"phone","price":35000,"icon":"icon-phone","hue":"pink","rating":4.8,"reviews":12,"imageUrl":null},
+  {"id":2,"name":"Dell Inspiron 15 Laptop","category":"electronics","price":25000,"icon":"icon-laptop","hue":"mint","rating":4.5,"reviews":8,"imageUrl":null},
+  {"id":3,"name":"Nike Air Max (Size 9)","category":"fashion","price":3500,"icon":"icon-shirt","hue":"yellow","rating":4.2,"reviews":5,"imageUrl":null},
+  {"id":4,"name":"Rich Dad Poor Dad (Paperback)","category":"books","price":150,"icon":"icon-book","hue":"lavender","rating":4.9,"reviews":45,"imageUrl":null},
+  {"id":5,"name":"Wooden Study Table","category":"home","price":2500,"icon":"icon-home","hue":"pink","rating":4.0,"reviews":3,"imageUrl":null},
+  {"id":6,"name":"Sony PlayStation 4 (500GB)","category":"electronics","price":12000,"icon":"icon-box","hue":"mint","rating":4.7,"reviews":22,"imageUrl":null}
+]
