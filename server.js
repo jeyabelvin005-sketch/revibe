@@ -2,20 +2,29 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
-const path = require('path');
 const multer = require('multer');
 const Razorpay = require('razorpay');
 const mongoose = require('mongoose');
-const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ===== Cloudinary Setup =====
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// ===== MongoDB Connection =====
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
+// ===== Mongoose Models =====
 const ProductSchema = new mongoose.Schema({
   name: String, category: String, price: Number, description: String, imageUrls: [String], date: { type: Date, default: Date.now }
 });
@@ -31,17 +40,18 @@ const RequestSchema = new mongoose.Schema({
 });
 const Request = mongoose.model('Request', RequestSchema);
 
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
+// ===== Express Static =====
+app.use(express.static('public'));
 
-app.use('/uploads', express.static(UPLOAD_DIR));
-app.use(express.static(path.join(__dirname, 'public')));
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + Math.round(Math.random() * 1e9) + path.extname(file.originalname))
+// ===== Multer Cloudinary Storage Setup =====
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'revibe_uploads', // Cloudinary folder name
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+  }
 });
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'placeholder',
@@ -54,6 +64,7 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// ===== API Routes =====
 app.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find().sort({ date: -1 }).lean();
@@ -61,25 +72,23 @@ app.get('/api/products', async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
-// Post New Product
 app.post('/api/admin/products', requireAdmin, upload.array('images', 5), async (req, res) => {
   try {
     const { name, category, price, description } = req.body;
-    const imageUrls = req.files ? req.files.map(file => '/uploads/' + file.filename) : [];
+    // Cloudinary returns the full URL in file.path
+    const imageUrls = req.files ? req.files.map(file => file.path) : [];
     const product = await Product.create({ name, category, price: parseFloat(price), description, imageUrls });
     res.json({ ...product.toObject(), id: product._id.toString() });
   } catch (err) { res.status(500).json({ error: 'Failed to add product' }); }
 });
 
-// EDIT Product (NEW)
 app.put('/api/admin/products/:id', requireAdmin, upload.array('images', 5), async (req, res) => {
   try {
     const { name, category, price, description } = req.body;
     const updateData = { name, category, price: parseFloat(price), description };
     
-    // If new images are uploaded, replace them. Otherwise, keep old ones.
     if (req.files && req.files.length > 0) {
-      updateData.imageUrls = req.files.map(file => '/uploads/' + file.filename);
+      updateData.imageUrls = req.files.map(file => file.path);
     }
     
     const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
