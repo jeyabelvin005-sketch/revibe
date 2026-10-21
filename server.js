@@ -6,48 +6,32 @@ const path = require('path');
 const multer = require('multer');
 const Razorpay = require('razorpay');
 const mongoose = require('mongoose');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ===== MongoDB Connection =====
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// ===== Mongoose Models =====
 const ProductSchema = new mongoose.Schema({
-  name: String,
-  category: String,
-  price: Number,
-  description: String,
-  imageUrls: [String], // Changed to array for multiple images
-  date: { type: Date, default: Date.now }
+  name: String, category: String, price: Number, description: String, imageUrls: [String], date: { type: Date, default: Date.now }
 });
 const Product = mongoose.model('Product', ProductSchema);
 
 const OrderSchema = new mongoose.Schema({
-  razorpayOrderId: String,
-  status: String,
-  date: { type: Date, default: Date.now },
-  customer: { name: String, phone: String, address: String },
-  items: Array,
-  amount: Number
+  razorpayOrderId: String, status: String, date: { type: Date, default: Date.now }, customer: { name: String, phone: String, address: String }, items: Array, amount: Number
 });
 const Order = mongoose.model('Order', OrderSchema);
 
 const RequestSchema = new mongoose.Schema({
-  buyerName: String,
-  buyerPhone: String,
-  wantedProduct: String,
-  date: { type: Date, default: Date.now }
+  buyerName: String, buyerPhone: String, wantedProduct: String, date: { type: Date, default: Date.now }
 });
 const Request = mongoose.model('Request', RequestSchema);
 
-// ===== Setup =====
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
-const fs = require('fs');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
 app.use('/uploads', express.static(UPLOAD_DIR));
@@ -70,28 +54,37 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ===== API Routes =====
 app.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find().sort({ date: -1 }).lean();
-    const formatted = products.map(p => ({ ...p, id: p._id.toString() }));
-    res.json(formatted);
+    res.json(products.map(p => ({ ...p, id: p._id.toString() })));
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
-// Change: upload.array('images', 5) to accept up to 5 images
+// Post New Product
 app.post('/api/admin/products', requireAdmin, upload.array('images', 5), async (req, res) => {
   try {
     const { name, category, price, description } = req.body;
-    
-    // Map through all uploaded files
     const imageUrls = req.files ? req.files.map(file => '/uploads/' + file.filename) : [];
-    
-    const product = await Product.create({
-      name, category, price: parseFloat(price), description, imageUrls
-    });
+    const product = await Product.create({ name, category, price: parseFloat(price), description, imageUrls });
     res.json({ ...product.toObject(), id: product._id.toString() });
   } catch (err) { res.status(500).json({ error: 'Failed to add product' }); }
+});
+
+// EDIT Product (NEW)
+app.put('/api/admin/products/:id', requireAdmin, upload.array('images', 5), async (req, res) => {
+  try {
+    const { name, category, price, description } = req.body;
+    const updateData = { name, category, price: parseFloat(price), description };
+    
+    // If new images are uploaded, replace them. Otherwise, keep old ones.
+    if (req.files && req.files.length > 0) {
+      updateData.imageUrls = req.files.map(file => '/uploads/' + file.filename);
+    }
+    
+    const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    res.json({ ...product.toObject(), id: product._id.toString() });
+  } catch (err) { res.status(500).json({ error: 'Failed to update product' }); }
 });
 
 app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
@@ -104,9 +97,7 @@ app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
 app.post('/api/checkout', async (req, res) => {
   try {
     const { items, customer, paymentMethod } = req.body;
-    let total = 0;
-    const lineItems = [];
-    
+    let total = 0; const lineItems = [];
     for (const { id, qty } of items) {
       const product = await Product.findById(id);
       if (product) { total += product.price * qty; lineItems.push({ id: product._id.toString(), name: product.name, price: product.price, qty }); }
@@ -117,7 +108,6 @@ app.post('/api/checkout', async (req, res) => {
       const order = await Order.create({ status: 'COD Pending', customer, items: lineItems, amount: total });
       return res.json({ success: true, message: 'COD Order placed', orderId: order._id });
     } 
-    
     const rzpOrder = await razorpay.orders.create({ amount: Math.round(total * 100), currency: 'INR', receipt: 'ORD_' + Date.now() });
     await Order.create({ razorpayOrderId: rzpOrder.id, status: 'pending', customer, items: lineItems, amount: total });
     res.json({ success: true, orderId: rzpOrder.id, amount: rzpOrder.amount, currency: 'INR' });
@@ -131,9 +121,7 @@ app.post('/api/verify-payment', async (req, res) => {
     if (expected === razorpay_signature) {
       await Order.findOneAndUpdate({ razorpayOrderId: razorpay_order_id }, { status: 'Paid', razorpayPaymentId: razorpay_payment_id });
       res.json({ verified: true });
-    } else {
-      res.json({ verified: false });
-    }
+    } else { res.json({ verified: false }); }
   } catch (err) { res.status(500).json({ error: 'Verification failed' }); }
 });
 
@@ -148,16 +136,14 @@ app.post('/api/wanted-request', async (req, res) => {
 app.get('/api/admin/orders', requireAdmin, async (req, res) => {
   try {
     const orders = await Order.find().sort({ date: -1 }).lean();
-    const formatted = orders.map(o => ({ ...o, id: o._id.toString() }));
-    res.json(formatted);
+    res.json(orders.map(o => ({ ...o, id: o._id.toString() })));
   } catch (err) { res.status(500).json({ error: 'Failed to load orders' }); }
 });
 
 app.get('/api/admin/requests', requireAdmin, async (req, res) => {
   try {
     const reqs = await Request.find().sort({ date: -1 }).lean();
-    const formatted = reqs.map(r => ({ ...r, id: r._id.toString() }));
-    res.json(formatted);
+    res.json(reqs.map(r => ({ ...r, id: r._id.toString() })));
   } catch (err) { res.status(500).json({ error: 'Failed to load requests' }); }
 });
 

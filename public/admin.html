@@ -28,6 +28,7 @@
   .item-info { flex: 1; }
   .item-info b { display: block; font-size: 0.95rem; }
   .item-info span { font-size: 0.85rem; color: #777; }
+  .btn-edit { background: #007bff; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right: 5px; }
   .btn-del { background: #ff4d4f; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
   .req-card { border-left: 4px solid var(--pink); background: var(--surface); padding: 16px; margin-bottom: 12px; border-radius: 4px; }
   .req-top { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; }
@@ -50,11 +51,12 @@
   </div>
 
   <div class="card">
-    <h2>Post a Product</h2>
+    <h2 id="formTitle">Post a Product</h2>
     <form id="productForm" class="form-grid">
-      <div class="full"><label>Product Name</label><input name="name" required></div>
+      <input type="hidden" id="editId" value="">
+      <div class="full"><label>Product Name</label><input name="name" id="pName" required></div>
       <div><label>Category</label>
-        <select name="category">
+        <select name="category" id="pCategory">
           <option value="phone">Mobiles</option>
           <option value="electronics">Electronics</option>
           <option value="fashion">Fashion</option>
@@ -63,11 +65,13 @@
           <option value="others">Others</option>
         </select>
       </div>
-      <div><label>Price (₹)</label><input name="price" type="number" required></div>
-      <div class="full"><label>Description</label><textarea name="description" rows="2"></textarea></div>
-      <!-- ⚠️ CHANGED: name="images" and added "multiple" -->
-      <div class="full"><label>Upload Images (Select up to 5 images)</label><input name="images" type="file" accept="image/*" multiple required></div>
-      <div class="full"><button type="submit" class="btn">Post Product</button></div>
+      <div><label>Price (₹)</label><input name="price" id="pPrice" type="number" required></div>
+      <div class="full"><label>Description</label><textarea name="description" id="pDesc" rows="2"></textarea></div>
+      <div class="full"><label>Upload Images (Select up to 5 images)</label><input name="images" type="file" accept="image/*" multiple></div>
+      <div class="full">
+        <button type="submit" class="btn" id="submitBtn">Post Product</button>
+        <button type="button" class="btn" style="background:#777; display:none; margin-top:10px;" id="cancelEditBtn" onclick="resetForm()">Cancel Edit</button>
+      </div>
     </form>
   </div>
 
@@ -89,6 +93,7 @@
 
 <script>
 const API_BASE = "";
+let ALL_PRODUCTS = [];
 
 function getKey() { return localStorage.getItem('revibe_admin_key') || ''; }
 function saveKey() {
@@ -98,43 +103,84 @@ function saveKey() {
 }
 document.getElementById('adminKey').value = getKey();
 
-async function loadData() {
-  loadProducts(); loadOrders(); loadRequests();
-}
+async function loadData() { loadProducts(); loadOrders(); loadRequests(); }
 
 async function loadProducts() {
   const res = await fetch(API_BASE + '/api/products');
-  const products = await res.json();
+  ALL_PRODUCTS = await res.json();
   const list = document.getElementById('productList');
-  if(products.length === 0) return list.innerHTML = '<p style="color:#777;">No products posted yet.</p>';
+  if(ALL_PRODUCTS.length === 0) return list.innerHTML = '<p style="color:#777;">No products posted yet.</p>';
   
-  list.innerHTML = products.map(p => {
-    // Handle multiple images (use first image for thumbnail)
-    const thumb = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : (p.imageUrl || null);
+  list.innerHTML = ALL_PRODUCTS.map(p => {
+    const thumb = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : null;
     return `
     <div class="item">
       ${thumb ? `<img src="${API_BASE}${thumb}">` : ''}
       <div class="item-info">
         <b>${p.name}</b><span>₹${p.price} · ${p.category}</span>
       </div>
+      <button class="btn-edit" data-id="${p.id}">Edit</button>
       <button class="btn-del" data-id="${p.id}">Delete</button>
     </div>
-  `;
-  }).join('');
+  `}).join('');
 
+  document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', (e) => editProduct(e.target.getAttribute('data-id')));
+  });
   document.querySelectorAll('.btn-del').forEach(btn => {
     btn.addEventListener('click', (e) => deleteProduct(e.target.getAttribute('data-id')));
   });
 }
 
+function editProduct(id) {
+  const p = ALL_PRODUCTS.find(prod => prod.id === id);
+  if(!p) return;
+  
+  document.getElementById('editId').value = p.id;
+  document.getElementById('pName').value = p.name;
+  document.getElementById('pCategory').value = p.category;
+  document.getElementById('pPrice').value = p.price;
+  document.getElementById('pDesc').value = p.description || '';
+  
+  document.getElementById('formTitle').innerText = "Edit Product";
+  document.getElementById('submitBtn').innerText = "Update Product";
+  document.getElementById('cancelEditBtn').style.display = "block";
+  window.scrollTo(0, 0);
+}
+
+function resetForm() {
+  document.getElementById('productForm').reset();
+  document.getElementById('editId').value = '';
+  document.getElementById('formTitle').innerText = "Post a Product";
+  document.getElementById('submitBtn').innerText = "Post Product";
+  document.getElementById('cancelEditBtn').style.display = "none";
+}
+
 document.getElementById('productForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = e.target.querySelector('button');
-  btn.innerText = 'Posting...';
+  const btn = document.getElementById('submitBtn');
+  const editId = document.getElementById('editId').value;
+  btn.innerText = 'Processing...';
+  
   const form = new FormData(e.target);
-  const res = await fetch(API_BASE + '/api/admin/products', { method: 'POST', headers: { 'x-admin-key': getKey() }, body: form });
-  if(res.ok) { e.target.reset(); loadProducts(); btn.innerText = 'Post Product'; }
-  else { alert('Error. Check Admin Key.'); btn.innerText = 'Post Product'; }
+  const url = editId ? `${API_BASE}/api/admin/products/${editId}` : `${API_BASE}/api/admin/products`;
+  const method = editId ? 'PUT' : 'POST';
+
+  // If editing and no new image selected, remove the empty images array so it doesn't fail
+  const files = form.getAll('images');
+  if (editId && files[0].name === '') {
+    form.delete('images');
+  }
+
+  const res = await fetch(url, { method: method, headers: { 'x-admin-key': getKey() }, body: form });
+  
+  if(res.ok) { 
+    resetForm(); 
+    loadProducts(); 
+  } else { 
+    alert('Error. Check Admin Key or Image Size.'); 
+    btn.innerText = editId ? 'Update Product' : 'Post Product'; 
+  }
 });
 
 async function deleteProduct(id) {
@@ -146,11 +192,9 @@ async function deleteProduct(id) {
 async function loadOrders() {
   const res = await fetch(API_BASE + '/api/admin/orders', { headers: { 'x-admin-key': getKey() } });
   if(!res.ok) return document.getElementById('orderList').innerHTML = '<p style="color:#777;">Enter Admin Key to view orders.</p>';
-  
   const orders = await res.json();
   const list = document.getElementById('orderList');
   if(orders.length === 0) return list.innerHTML = '<p style="color:#777;">No orders yet.</p>';
-  
   list.innerHTML = orders.map(o => `
     <div class="req-card" style="border-left-color: ${o.status === 'Paid' ? '#00695c' : '#d81b60'};">
       <div class="req-top"><span>${o.customer.name} <span class="status ${o.status === 'Paid' ? 'paid' : 'cod'}">${o.status}</span></span><span>₹${o.amount}</span></div>
@@ -164,11 +208,9 @@ async function loadOrders() {
 async function loadRequests() {
   const res = await fetch(API_BASE + '/api/admin/requests', { headers: { 'x-admin-key': getKey() } });
   if(!res.ok) return document.getElementById('requestList').innerHTML = '<p style="color:#777;">Enter Admin Key to view requests.</p>';
-  
   const reqs = await res.json();
   const list = document.getElementById('requestList');
   if(reqs.length === 0) return list.innerHTML = '<p style="color:#777;">No wanted requests yet.</p>';
-  
   list.innerHTML = reqs.map(r => `
     <div class="req-card">
       <div class="req-top"><span>${r.buyerName}</span><span style="color:var(--pink);">${new Date(r.date).toLocaleDateString()}</span></div>
