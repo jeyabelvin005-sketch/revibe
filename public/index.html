@@ -8,20 +8,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root { 
-    --bg: #f7f9fa; /* Professional subtle grey */
+    --bg: #fcfcfc; /* Newspaper clean white background */
     --surface: #ffffff; 
-    --text: #002f34; 
-    --text-soft: #7f9799; 
+    --text: #111111; /* Dark text for newspaper feel */
+    --text-soft: #666666; 
     --pink: #F0458F; 
-    --border: #e6eaed; 
+    --border: #e0e0e0; 
   }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
-  body { background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; padding-bottom: 60px; } /* padding for bottom menu */
+  body { background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; padding-bottom: 70px; }
   
   /* Header */
   header { background: var(--surface); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
   .header-inner { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 16px; }
-  .logo { font-size: 1.5rem; font-weight: 700; color: var(--pink); text-decoration: none; cursor: pointer; }
+  .logo { font-size: 1.5rem; font-weight: 700; color: var(--pink); text-decoration: none; cursor: pointer; letter-spacing: -0.5px;}
   .search-bar { flex: 1; display: flex; background: #fff; border: 1px solid #ccc; border-radius: 4px; overflow: hidden; }
   .search-bar input { flex: 1; border: none; padding: 10px 12px; outline: none; font-size:0.9rem; }
   .search-btn { background: var(--text); border: none; padding: 0 16px; cursor: pointer; color: white; font-weight: 500; }
@@ -29,13 +29,14 @@
   .header-actions { display: flex; gap: 12px; align-items: center; }
   .cart-btn { background: none; border: none; cursor: pointer; position: relative; display: flex; align-items: center; gap: 5px; font-weight: 500; color: var(--text); font-size: 1rem; }
   .cart-count { background: var(--pink); color: white; padding: 2px 6px; border-radius: 50%; font-size: 0.7rem; position: absolute; top: -8px; right: -8px; }
-  
+
   /* Toast Notification */
   #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 30px; padding: 12px 24px; position: fixed; z-index: 9999; left: 50%; bottom: 80px; transform: translateX(-50%); font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
   #toast.show { visibility: visible; opacity: 1; bottom: 90px; }
 
   /* Categories */
-  .categories { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 0; margin-bottom: 16px; overflow-x: auto; white-space: nowrap; }
+  .categories { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 0; margin-bottom: 16px; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; }
+  .categories::-webkit-scrollbar { display: none; } /* Hide scrollbar */
   .cat-container { max-width: 1200px; margin: 0 auto; padding: 0 16px; display: flex; gap: 12px; }
   .cat-btn { background: transparent; border: 1px solid var(--border); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; color: var(--text); }
   .cat-btn.active { background: #ffebf2; border-color: #ffebf2; color: var(--pink); font-weight: 500; }
@@ -47,7 +48,10 @@
   @media(min-width: 600px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
   @media(min-width: 900px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
   
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
+  /* Slide Up Animation (Newspaper style) */
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; animation: slideUp 0.4s ease-out forwards; opacity: 0; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
   .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #f8f9fa; }
   .card-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
@@ -68,7 +72,7 @@
   @media(max-width: 768px) { .request-banner { display: none; } }
 
   /* Product Detail View */
-  #productDetailView { display: none; max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
+  #productDetailView { display: none; max-width: 1200px; margin: 0 auto; padding: 20px 16px; animation: slideUp 0.4s ease-out forwards; opacity: 0; }
   .back-btn { background: none; border: none; font-size: 1rem; font-weight: 500; color: var(--text); cursor: pointer; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
   .detail-container { display: flex; gap: 30px; background: var(--surface); border-radius: 8px; padding: 20px; margin-bottom: 40px; flex-wrap: wrap; align-items: flex-start; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
   .detail-gallery { flex: 0 0 100%; max-width: 400px; }
@@ -105,20 +109,21 @@
   .payment-options label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; }
 
   /* Mobile Bottom Navigation Bar */
-  .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 500; justify-content: space-around; padding: 10px 0; padding-bottom: env(safe-area-inset-bottom, 10px); }
-  .mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-soft); background: none; border: none; cursor: pointer; font-weight: 500; }
+  .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 500; justify-content: space-around; padding: 8px 0; padding-bottom: env(safe-area-inset-bottom, 8px); }
+  
+  /* FIX: Mobile Menu Layout */
+  .mobile-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 0.75rem; color: var(--text-soft); background: none; border: none; cursor: pointer; font-weight: 500; width: 33.33%; text-align: center; }
   .mobile-nav-item.active { color: var(--pink); }
   .mobile-nav-item svg { width: 22px; height: 22px; fill: currentColor; }
   
   @media(max-width: 768px) {
     .mobile-nav { display: flex; }
-    .header-actions .cart-btn { display: none; } /* Hide top cart on mobile */
+    .header-actions .cart-btn { display: none; }
   }
 </style>
 </head>
 <body>
 
-<!-- Custom Toast Notification -->
 <div id="toast">Product added to cart!</div>
 
 <header>
@@ -224,7 +229,6 @@ let PRODUCTS = [];
 let currentCategory = 'all';
 let cart = {}; 
 
-// ===== CUSTOM TOAST NOTIFICATION =====
 function showToast(msg) {
   const toast = document.getElementById("toast");
   toast.innerText = msg;
@@ -232,11 +236,9 @@ function showToast(msg) {
   setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
 }
 
-// ===== MOBILE BACK BUTTON HANDLING =====
 window.addEventListener('popstate', function(event) {
-  // If back button is pressed while on product detail page, go to main page
   if (document.getElementById('productDetailView').style.display === 'block') {
-    showMainPage(false); // false = don't push another history state
+    showMainPage(false); 
   }
 });
 
@@ -272,11 +274,13 @@ function renderGrid() {
     return;
   }
 
-  grid.innerHTML = filtered.map(p => {
+  grid.innerHTML = filtered.map((p, index) => {
     const thumb = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : null;
+    // Stagger animation for newspaper sliding effect
+    const delay = index * 0.05; 
     return `
-    <div class="card" onclick="openProductDetail('${p.id}')">
-      ${thumb ? `<img src="${API_BASE}${thumb}" class="card-img">` : `<div class="card-img"></div>`}
+    <div class="card" style="animation-delay: ${delay}s;" onclick="openProductDetail('${p.id}')">
+      ${thumb ? `<img src="${API_BASE}${thumb}" class="card-img" onerror="this.src=''; this.style.background='#eee';">` : `<div class="card-img"></div>`}
       <div class="card-body">
         <div class="card-price">₹${p.price.toLocaleString('en-IN')}</div>
         <div class="card-title">${p.name}</div>
@@ -294,7 +298,6 @@ function openProductDetail(id) {
   const product = PRODUCTS.find(p => p.id === id);
   if(!product) return;
 
-  // Push state to history for mobile back button
   history.pushState({page: 'detail'}, '', '#product');
 
   document.getElementById('mainShopView').style.display = 'none';
@@ -308,7 +311,7 @@ function openProductDetail(id) {
   container.innerHTML = `
     <div class="detail-gallery">
       <div class="main-img-wrap">
-        ${mainImg ? `<img src="${mainImg}" id="mainImage">` : `<div style="height:350px;display:flex;align-items:center;justify-content:center;color:#ccc;">No Image</div>`}
+        ${mainImg ? `<img src="${mainImg}" id="mainImage" onerror="this.src=''; this.style.background='#eee';">` : `<div style="height:350px;display:flex;align-items:center;justify-content:center;color:#ccc;">No Image</div>`}
       </div>
       ${images.length > 1 ? `
         <div class="thumbnails">
@@ -339,7 +342,7 @@ function openProductDetail(id) {
       const thumb = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : null;
       return `
       <div class="card" onclick="openProductDetail('${p.id}')">
-        ${thumb ? `<img src="${API_BASE}${thumb}" class="card-img">` : `<div class="card-img"></div>`}
+        ${thumb ? `<img src="${API_BASE}${thumb}" class="card-img" onerror="this.src=''; this.style.background='#eee';">` : `<div class="card-img"></div>`}
         <div class="card-body">
           <div class="card-price">₹${p.price.toLocaleString('en-IN')}</div>
           <div class="card-title">${p.name}</div>
@@ -364,13 +367,11 @@ function showMainPage(useHistory = true) {
   document.getElementById('mainShopView').style.display = 'block';
   window.scrollTo(0, 0);
   
-  // If clicked via UI button, clear history state
   if(useHistory && window.history.state && window.history.state.page === 'detail') {
     history.back();
   }
 }
 
-// ===== CART LOGIC =====
 function addToCart(id, showMsg = true) {
   cart[id] = (cart[id] || 0) + 1;
   updateCartCount();
@@ -385,7 +386,7 @@ function buyNow(id) {
 function updateCartCount() {
   const count = Object.values(cart).reduce((a, b) => a + b, 0);
   document.getElementById('cartCount').innerText = count;
-  document.getElementById('mobileCartCount').innerText = count; // Mobile bottom menu count
+  document.getElementById('mobileCartCount').innerText = count;
 }
 
 function openCart() {
@@ -409,7 +410,6 @@ function openCart() {
   document.getElementById('cartModal').style.display = 'flex';
 }
 
-// ===== REMOVE FROM CART =====
 function removeFromCart(id) {
   delete cart[id];
   updateCartCount();
@@ -417,7 +417,7 @@ function removeFromCart(id) {
     closeModal('cartModal');
     showToast('Cart is now empty');
   } else {
-    openCart(); // Re-render cart modal
+    openCart();
   }
 }
 
