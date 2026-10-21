@@ -65,7 +65,8 @@
       </div>
       <div><label>Price (₹)</label><input name="price" type="number" required></div>
       <div class="full"><label>Description</label><textarea name="description" rows="2"></textarea></div>
-      <div class="full"><label>Upload Image</label><input name="image" type="file" accept="image/*" required></div>
+      <!-- ⚠️ CHANGED: name="images" and added "multiple" -->
+      <div class="full"><label>Upload Images (Select up to 5 images)</label><input name="images" type="file" accept="image/*" multiple required></div>
       <div class="full"><button type="submit" class="btn">Post Product</button></div>
     </form>
   </div>
@@ -107,15 +108,19 @@ async function loadProducts() {
   const list = document.getElementById('productList');
   if(products.length === 0) return list.innerHTML = '<p style="color:#777;">No products posted yet.</p>';
   
-  list.innerHTML = products.map(p => `
+  list.innerHTML = products.map(p => {
+    // Handle multiple images (use first image for thumbnail)
+    const thumb = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : (p.imageUrl || null);
+    return `
     <div class="item">
-      ${p.imageUrl ? `<img src="${API_BASE}${p.imageUrl}">` : ''}
+      ${thumb ? `<img src="${API_BASE}${thumb}">` : ''}
       <div class="item-info">
         <b>${p.name}</b><span>₹${p.price} · ${p.category}</span>
       </div>
       <button class="btn-del" data-id="${p.id}">Delete</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   document.querySelectorAll('.btn-del').forEach(btn => {
     btn.addEventListener('click', (e) => deleteProduct(e.target.getAttribute('data-id')));

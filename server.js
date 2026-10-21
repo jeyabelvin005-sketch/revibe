@@ -22,7 +22,7 @@ const ProductSchema = new mongoose.Schema({
   category: String,
   price: Number,
   description: String,
-  imageUrl: String,
+  imageUrls: [String], // Changed to array for multiple images
   date: { type: Date, default: Date.now }
 });
 const Product = mongoose.model('Product', ProductSchema);
@@ -79,12 +79,16 @@ app.get('/api/products', async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
-app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req, res) => {
+// Change: upload.array('images', 5) to accept up to 5 images
+app.post('/api/admin/products', requireAdmin, upload.array('images', 5), async (req, res) => {
   try {
     const { name, category, price, description } = req.body;
+    
+    // Map through all uploaded files
+    const imageUrls = req.files ? req.files.map(file => '/uploads/' + file.filename) : [];
+    
     const product = await Product.create({
-      name, category, price: parseFloat(price), description,
-      imageUrl: req.file ? ('/uploads/' + req.file.filename) : null
+      name, category, price: parseFloat(price), description, imageUrls
     });
     res.json({ ...product.toObject(), id: product._id.toString() });
   } catch (err) { res.status(500).json({ error: 'Failed to add product' }); }

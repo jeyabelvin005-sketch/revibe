@@ -15,15 +15,12 @@
   header { background: var(--surface); position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
   .header-inner { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 16px; }
   .logo { font-size: 1.5rem; font-weight: 700; color: var(--pink); text-decoration: none; cursor: pointer; }
-  
   .search-bar { flex: 1; display: flex; background: var(--surface); border: 2px solid var(--text); border-radius: 4px; overflow: hidden; }
   .search-bar input { flex: 1; border: none; padding: 10px 12px; outline: none; }
   .search-btn { background: var(--text); border: none; padding: 0 16px; cursor: pointer; color: white; font-weight: 500; }
-
   .header-actions { display: flex; gap: 12px; align-items: center; }
   .cart-btn { background: none; border: none; cursor: pointer; position: relative; display: flex; align-items: center; gap: 5px; font-weight: 500; color: var(--text); font-size: 1rem; }
   .cart-count { background: var(--pink); color: white; padding: 2px 6px; border-radius: 50%; font-size: 0.7rem; position: absolute; top: -8px; right: -8px; }
-
   .top-banner { background: #ffebf2; text-align: center; padding: 10px; font-size: 0.85rem; color: var(--pink); font-weight: 500; }
   
   /* Categories */
@@ -46,8 +43,6 @@
   .card-price { font-size: 1.1rem; font-weight: 700; }
   .card-title { font-size: 0.85rem; color: var(--text-soft); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; box-orient: vertical; overflow: hidden; }
   .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.7rem; color: var(--text-soft); }
-  
-  /* Grid Actions (Add & Buy Now) */
   .card-actions { display: flex; gap: 8px; margin-top: 10px; }
   .btn-add, .btn-buy-grid { flex: 1; padding: 8px; border-radius: 4px; font-weight: 500; font-size: 0.8rem; cursor: pointer; text-align: center; }
   .btn-add { background: #fff; color: var(--pink); border: 1px solid var(--pink); }
@@ -58,12 +53,15 @@
   /* Product Detail View */
   #productDetailView { display: none; max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
   .back-btn { background: none; border: none; font-size: 1rem; font-weight: 500; color: var(--text); cursor: pointer; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-  
   .detail-container { display: flex; gap: 30px; background: var(--surface); border-radius: 8px; padding: 20px; margin-bottom: 40px; flex-wrap: wrap; align-items: flex-start; }
   
-  /* Image size same as grid (square) */
-  .detail-img-wrap { flex: 0 0 100%; max-width: 350px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: #f8f9fa; aspect-ratio: 1/1; }
-  .detail-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* Image Gallery Styles */
+  .detail-gallery { flex: 0 0 100%; max-width: 400px; }
+  .main-img-wrap { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: #f8f9fa; aspect-ratio: 1/1; margin-bottom: 10px; }
+  .main-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: 0.3s; }
+  .thumbnails { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+  .thumbnails img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+  .thumbnails img:hover, .thumbnails img.active-thumb { border-color: var(--pink); }
   
   .detail-info { flex: 1 1 300px; display: flex; flex-direction: column; gap: 12px; }
   .detail-category { font-size: 0.8rem; color: var(--pink); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
@@ -71,14 +69,12 @@
   .detail-price { font-size: 1.8rem; font-weight: 700; color: var(--text); }
   .detail-desc { font-size: 0.95rem; color: #555; line-height: 1.6; white-space: pre-wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
   
-  /* Detail Actions (Add & Buy Now) */
   .detail-actions { display: flex; gap: 12px; margin-top: 20px; width: 100%; max-width: 400px; }
   .btn-add-cart, .btn-buy-now { flex: 1; padding: 14px; border-radius: 4px; font-weight: 700; font-size: 1rem; cursor: pointer; text-align: center; transition: 0.2s; }
   .btn-add-cart { background: #fff; color: var(--pink); border: 1px solid var(--pink); }
   .btn-add-cart:hover { background: #fff0f6; }
   .btn-buy-now { background: var(--pink); color: #fff; border: 1px solid var(--pink); }
   .btn-buy-now:hover { background: #d42a78; border-color: #d42a78; }
-
   .related-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
 
   /* Modals */
@@ -108,9 +104,7 @@
       <button class="search-btn">Search</button>
     </div>
     <div class="header-actions">
-      <button class="cart-btn" onclick="openCart()">
-        🛒 Cart <span class="cart-count" id="cartCount">0</span>
-      </button>
+      <button class="cart-btn" onclick="openCart()">🛒 Cart <span class="cart-count" id="cartCount">0</span></button>
     </div>
   </div>
 </header>
@@ -142,11 +136,7 @@
 <!-- PRODUCT DETAIL VIEW -->
 <div id="productDetailView">
   <button class="back-btn" onclick="showMainPage()">← Back to Shop</button>
-  
-  <div class="detail-container" id="detailContainer">
-    <!-- Filled via JS -->
-  </div>
-
+  <div class="detail-container" id="detailContainer"></div>
   <div class="related-section">
     <h2 class="related-title">Similar Products</h2>
     <div class="grid" id="relatedGrid"></div>
@@ -227,23 +217,25 @@ function renderGrid() {
     return;
   }
 
-  grid.innerHTML = filtered.map(p => `
+  grid.innerHTML = filtered.map(p => {
+    // Handle both old and new image formats
+    const thumb = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : (p.imageUrl || null);
+    
+    return `
     <div class="card" onclick="openProductDetail('${p.id}')">
-      ${p.imageUrl ? `<img src="${API_BASE}${p.imageUrl}" class="card-img">` : `<div class="card-img"></div>`}
+      ${thumb ? `<img src="${API_BASE}${thumb}" class="card-img">` : `<div class="card-img"></div>`}
       <div class="card-body">
         <div class="card-price">₹${p.price.toLocaleString('en-IN')}</div>
         <div class="card-title">${p.name}</div>
         <div class="card-footer"><span>${new Date(p.date).toLocaleDateString()}</span></div>
-        
-        <!-- Grid Buttons: Add & Buy Now -->
         <div class="card-actions">
           <button class="btn-add" onclick="event.stopPropagation(); addToCart('${p.id}')">Add</button>
           <button class="btn-buy-grid" onclick="event.stopPropagation(); buyNow('${p.id}')">Buy Now</button>
         </div>
-        
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function openProductDetail(id) {
@@ -254,17 +246,30 @@ function openProductDetail(id) {
   document.getElementById('productDetailView').style.display = 'block';
   window.scrollTo(0, 0);
 
+  // Handle multiple images
+  const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
+  const mainImg = images.length > 0 ? `${API_BASE}${images[0]}` : '';
+
   const container = document.getElementById('detailContainer');
   container.innerHTML = `
-    <div class="detail-img-wrap">
-      ${product.imageUrl ? `<img src="${API_BASE}${product.imageUrl}">` : `<div style="height:350px;display:flex;align-items:center;justify-content:center;color:#ccc;">No Image</div>`}
+    <div class="detail-gallery">
+      <div class="main-img-wrap">
+        ${mainImg ? `<img src="${mainImg}" id="mainImage">` : `<div style="height:350px;display:flex;align-items:center;justify-content:center;color:#ccc;">No Image</div>`}
+      </div>
+      ${images.length > 1 ? `
+        <div class="thumbnails">
+          ${images.map((img, idx) => `
+            <img src="${API_BASE}${img}" onclick="changeMainImage('${API_BASE}${img}', this)" class="${idx === 0 ? 'active-thumb' : ''}">
+          `).join('')}
+        </div>
+      ` : ''}
     </div>
+    
     <div class="detail-info">
       <div class="detail-category">${product.category}</div>
       <h1 class="detail-title">${product.name}</h1>
       <div class="detail-price">₹${product.price.toLocaleString('en-IN')}</div>
       <div class="detail-desc"><b>Description:</b><br>${product.description || 'No description provided.'}</div>
-      
       <div class="detail-actions">
         <button class="btn-add-cart" onclick="addToCart('${product.id}')">Add to Cart</button>
         <button class="btn-buy-now" onclick="buyNow('${product.id}')">Buy Now</button>
@@ -278,9 +283,11 @@ function openProductDetail(id) {
   if(related.length === 0) {
     relGrid.innerHTML = '<p style="color:#777;">No similar products found.</p>';
   } else {
-    relGrid.innerHTML = related.map(p => `
+    relGrid.innerHTML = related.map(p => {
+      const thumb = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : (p.imageUrl || null);
+      return `
       <div class="card" onclick="openProductDetail('${p.id}')">
-        ${p.imageUrl ? `<img src="${API_BASE}${p.imageUrl}" class="card-img">` : `<div class="card-img"></div>`}
+        ${thumb ? `<img src="${API_BASE}${thumb}" class="card-img">` : `<div class="card-img"></div>`}
         <div class="card-body">
           <div class="card-price">₹${p.price.toLocaleString('en-IN')}</div>
           <div class="card-title">${p.name}</div>
@@ -290,8 +297,15 @@ function openProductDetail(id) {
           </div>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
+}
+
+function changeMainImage(src, thumbElement) {
+  document.getElementById('mainImage').src = src;
+  document.querySelectorAll('.thumbnails img').forEach(img => img.classList.remove('active-thumb'));
+  thumbElement.classList.add('active-thumb');
 }
 
 function showMainPage() {
